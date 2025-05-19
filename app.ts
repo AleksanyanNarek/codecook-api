@@ -6,7 +6,7 @@ import cookieParser from 'cookie-parser';
 import express from 'express';
 
 import { ErrorMiddleware } from './middleware/error';
-// import router from './routes/index';
+import router from './routes/index';
 
 export const app = express();
 
@@ -23,14 +23,6 @@ app.use(cors({
 }))
 
 // routes
-// app.use('/api/v1', router);
-
-//testing api
-app.get('/test', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'API is working'
-    })
-})
+app.use('/api/v1', router);
 
 app.use(ErrorMiddleware);
