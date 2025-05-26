@@ -3,9 +3,8 @@ import bcrypt from "bcryptjs";
 
 import { CatchAsyncError } from "../utils/catchAsyncErrors";
 import { prisma } from "../utils/prisma";
-import { generateTokens, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, removeToken, saveToken } from "../services/token.service";
-import { loginValidation, registrationValidation } from "../services/auth.service";
-
+import { generateTokens, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, saveToken } from "../services/token.service";
+import { loginValidation, logoutValidation, registrationValidation } from "../services/auth.service";
 
 export const signUpController = CatchAsyncError(
   async (req: Request, res: Response) => {
@@ -67,7 +66,7 @@ export const logoutController = CatchAsyncError(
   async (req: Request, res: Response) => {
     const { refreshToken } = req.cookies;
 
-    await removeToken(refreshToken);
+    logoutValidation(refreshToken);
 
     res.clearCookie('accessToken');
     res.clearCookie('refreshToken');

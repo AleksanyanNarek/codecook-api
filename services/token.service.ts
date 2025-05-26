@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
 
 import { AccessTokenType, RefreshTokenType, TokenPayload } from '../utils/types';
 import { prisma } from '../utils/prisma';
@@ -25,7 +25,7 @@ export function generateTokens (
     if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
         throw new ErrorHandler({ statusCode: 500, message: 'JWT secrets are not defined' });
     }
-
+    
     const accessToken = jwt.sign(payload, JWT_ACCESS_SECRET, {
         expiresIn: JWT_ACCESS_EXPIRES_IN,
         // ...accessOptions,
@@ -43,9 +43,11 @@ export function generateTokens (
 
 export function verifyAccessToken(token: string): TokenPayload | null {
     try {
-        const decoded = jwt.verify(token, JWT_ACCESS_SECRET);
+        const decoded = jwt.verify(token, JWT_ACCESS_SECRET) as JwtPayload;
 
-        return decoded as TokenPayload;
+        const { iat, exp, ...tokenPayload } = decoded;
+
+        return tokenPayload as TokenPayload;
     } catch (err) {
         return null;
     }
@@ -53,9 +55,11 @@ export function verifyAccessToken(token: string): TokenPayload | null {
 
 export function verifyRefreshToken(token: string): TokenPayload | null {
     try {
-        const decoded = jwt.verify(token, JWT_REFRESH_SECRET);
+        const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as JwtPayload;
 
-        return decoded as TokenPayload;
+        const { iat, exp, ...tokenPayload } = decoded;
+
+        return tokenPayload as TokenPayload;
     } catch (err) {
         return null;
     }

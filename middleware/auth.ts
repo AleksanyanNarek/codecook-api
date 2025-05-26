@@ -1,41 +1,56 @@
-// import jwt, { JwtPayload } from "jsonwebtoken";
+import { Request, Response, NextFunction } from "express";
 
-// import ErrorHandler from "../utils/ErrorHandler";
-// import { CatchAsyncError } from "./catchAsyncErrors";
-// import { redis } from "../utils/redis";
+import ErrorHandler from "../utils/ErrorHandler";
+import { CatchAsyncError } from "../utils/catchAsyncErrors";
+import { generateTokens, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, saveToken, verifyAccessToken, verifyRefreshToken } from "../services/token.service";
+import { checkAccessToken } from "../services/auth.service";
+import { TokenPayload } from "../utils/types";
 
-// // authenticated user
-// export const isAuthenticated = CatchAsyncError(
-//     async (req, res, next) => {
-//         const access_token = req.cookies.access_token;
-        
-//         if (!access_token) {
-//             return next(new ErrorHandler("Please login to access this resource", 400));
-//         }
-        
-//         const decoded = jwt.verify(access_token, process.env.ACCESS_TOKEN);
+export const authMiddleware = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const { Authorization: authorizationHeader } = req.headers;
 
-//         if (!decoded) {
-//             return next(new ErrorHandler("access token is not valid", 400));
-//         }
-        
+        const currentUser = checkAccessToken(authorizationHeader);
 
-//         if (!user) {
-//             return next(new ErrorHandler("Please login to access this resource", 400));
-//         }
+        if (currentUser) {
+            req.tokenUser = currentUser;
+            next();
+        }
 
-//         req.user = JSON.parse(user);
+        const { refreshtoken: refreshTokenHeader } = req.headers;
 
-//         next();
-//     }
-// );
+        if (typeof refreshTokenHeader !== 'string') {
+            throw ErrorHandler.UnauthorizedError();
+        }
 
-// // validate user role
-// export const authorizeRoles = (...roles) => {
-//     return (req, res, next) => {
-//         if (!roles.includes(req.user?.role || '')) {
-//             return next(new ErrorHandler(`Role: "${req.user?.role}" is not allowed to access this resource`, 403));
-//         }
-//         next();
-//     }
-// }
+        const userData = verifyRefreshToken(refreshTokenHeader);
+        if (!userData) {
+            throw ErrorHandler.UnauthorizedError();
+        }
+
+        const { accessToken, refreshToken } = generateTokens(userData);
+
+        await saveToken(userData.id, refreshToken);
+
+        res.cookie('accessToken', accessToken, getAccessTokenCookieOptions());
+        res.cookie('refreshToken', refreshToken, getRefreshTokenCookieOptions());
+
+        req.tokenUser = userData;
+        next();
+    }
+);
+
+export const checkAdminRole = CatchAsyncError(
+    async (req: Request, res: Response, next: NextFunction) => {
+        const tokenUser = req.tokenUser as TokenPayload;
+
+        if (tokenUser.role !== "ADMIN") {
+            throw new ErrorHandler({
+                statusCode: 403,
+                message: "Don't have access to this resource",
+            });
+        }
+
+        next();
+    }
+)

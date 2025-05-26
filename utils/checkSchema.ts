@@ -1,7 +1,7 @@
 import { ZodSchema } from "zod";
 
-import { ErrorDetails } from "../utils/types";
-import ErrorHandler from "../utils/ErrorHandler";
+import { ErrorDetails } from "./types";
+import ErrorHandler from "./ErrorHandler";
 
 export const checkSchema = (data: unknown, schema: ZodSchema) => {
   const parsedResult = schema.safeParse(data);
