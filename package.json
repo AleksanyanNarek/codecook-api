@@ -2,11 +2,10 @@
   "name": "api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "ts-node-dev server.ts",
-    "build": "tsc server.ts --outDir dist",
+    "dev": "tsc && node dist/server.js",
+    "build": "tsc",
     "start": "node dist/server.js"
   },
   "author": "",
