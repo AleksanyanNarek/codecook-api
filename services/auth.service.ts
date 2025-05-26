@@ -76,13 +76,24 @@ export const logoutValidation = async (refreshToken: string | undefined) => {
   }
 }
 
-export const checkAccessToken = (authorizationHeader: string | string[] | undefined): TokenPayload | null => {
+export const checkAccessTokenHeader = (authorizationHeader: string | string[] | undefined): TokenPayload | null => {
   if (typeof authorizationHeader !== 'string') return null;
 
   const { 0: type, 1: accessTokenHeader } = authorizationHeader.split(' ');
 
   // Check if the access token header is available then verify it (optimization)
   const currentUser = accessTokenHeader && verifyAccessToken(accessTokenHeader);
+  if (!currentUser) {
+    return null;
+  }
+
+  return currentUser;
+}
+
+export const checkAccessTokenCookie = (accessTokenCookie: string | undefined): TokenPayload | null => {
+  if (typeof accessTokenCookie !== 'string') return null;
+
+  const currentUser = verifyAccessToken(accessTokenCookie);
   if (!currentUser) {
     return null;
   }

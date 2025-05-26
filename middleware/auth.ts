@@ -3,27 +3,42 @@ import { Request, Response, NextFunction } from "express";
 import ErrorHandler from "../utils/ErrorHandler";
 import { CatchAsyncError } from "../utils/catchAsyncErrors";
 import { generateTokens, getAccessTokenCookieOptions, getRefreshTokenCookieOptions, saveToken, verifyAccessToken, verifyRefreshToken } from "../services/token.service";
-import { checkAccessToken } from "../services/auth.service";
+import { checkAccessTokenCookie, checkAccessTokenHeader } from "../services/auth.service";
 import { TokenPayload } from "../utils/types";
 
 export const authMiddleware = CatchAsyncError(
     async (req: Request, res: Response, next: NextFunction) => {
-        const { Authorization: authorizationHeader } = req.headers;
+        const isCookies = Object.keys(req.cookies).length > 0;
 
-        const currentUser = checkAccessToken(authorizationHeader);
+        if (!isCookies) {
+            const { Authorization: authorizationHeader } = req.headers;
+    
+            const currentUser = checkAccessTokenHeader(authorizationHeader);
+    
+            if (currentUser) {
+                req.tokenUser = currentUser;
+                next();
+            }
+        } else {
+            const { accessToken: accessTokenCookie } = req.cookies;
 
-        if (currentUser) {
-            req.tokenUser = currentUser;
-            next();
+            const currenUser = checkAccessTokenCookie(accessTokenCookie);
+
+            if (currenUser) {
+                req.tokenUser = currenUser;
+                next();
+            }
         }
 
-        const { refreshtoken: refreshTokenHeader } = req.headers;
+        const clientRefreshToken = isCookies
+            ? req.cookies.refreshToken
+            : req.headers.refreshtoken;
 
-        if (typeof refreshTokenHeader !== 'string') {
+        if (typeof clientRefreshToken !== 'string') {
             throw ErrorHandler.UnauthorizedError();
         }
 
-        const userData = verifyRefreshToken(refreshTokenHeader);
+        const userData = verifyRefreshToken(clientRefreshToken);
         if (!userData) {
             throw ErrorHandler.UnauthorizedError();
         }
