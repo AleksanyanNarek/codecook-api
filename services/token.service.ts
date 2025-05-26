@@ -1,5 +1,5 @@
-import dotenv from 'dotenv';
-import jwt, { JwtPayload, SignOptions } from 'jsonwebtoken';
+import * as dotenv from 'dotenv';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 
 import { AccessTokenType, RefreshTokenType, TokenPayload } from '../utils/types';
 import { prisma } from '../utils/prisma';
